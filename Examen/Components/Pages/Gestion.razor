@@ -1,0 +1,156 @@
+﻿@page "/productos"
+@using Examen.models
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>Gestión de Productos</PageTitle>
+
+<h2>Gestión de Productos</h2>
+
+<div class="container">
+    <EditForm Model="@nuevoProducto" OnValidSubmit="@GuardarProducto">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <div class="form-group">
+            <label for="inventario">Número de Inventario</label>
+            <InputNumber id="inventario" class="form-control" @bind-Value="nuevoProducto.Inventario" min="1" disabled="@modoEdicion" />
+            <ValidationMessage For="@(() => nuevoProducto.Inventario)" />
+        </div>
+
+        <div class="form-group">
+            <label for="nombre">Nombre</label>
+            <InputText id="nombre" class="form-control" @bind-Value="nuevoProducto.Nombre" placeholder="Ingrese el nombre" maxlength="200" />
+            <ValidationMessage For="@(() => nuevoProducto.Nombre)" />
+        </div>
+
+        <div class="form-group">
+            <label>Departamento</label><br />
+            <InputRadioGroup @bind-Value="nuevoProducto.Departamento">
+                @foreach (var departamento in departamentos)
+                {
+                    <InputRadio Value="@departamento" /> @departamento
+                }
+            </InputRadioGroup>
+            <ValidationMessage For="@(() => nuevoProducto.Departamento)" />
+        </div>
+
+        @if (modoEdicion)
+        {
+            <button type="button" class="btn btn-success mt-2" @onclick="ActualizarProducto">Actualizar</button>
+            <button type="button" class="btn btn-secondary mt-2" @onclick="CancelarEdicion">Cancelar</button>
+        }
+        else
+        {
+            <button type="submit" class="btn btn-primary mt-2">Guardar</button>
+        }
+    </EditForm>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h3>Lista de Productos</h3>
+            @if (productos.Count == 0)
+            {
+                <p>No hay productos registrados.</p>
+            }
+            else
+            {
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Inventario</th>
+                            <th>Nombre</th>
+                            <th>Departamento</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var producto in productos)
+                        {
+                            <tr>
+                                <td>@producto.Inventario</td>
+                                <td>@producto.Nombre</td>
+                                <td>@producto.Departamento</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" @onclick="() => EliminarProducto(producto)">
+                                        <span class="bi bi-trash"></span> Eliminar
+                                    </button>
+                                    <button class="btn btn-warning btn-sm" @onclick="() => CargarProductoEnFormulario(producto)">
+                                        <span class="bi bi-pencil"></span> Editar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Producto> productos = new List<Producto>();
+    private Producto nuevoProducto = new Producto();
+    private string? errorMessage;
+    private bool modoEdicion = false; 
+
+    private List<string> departamentos = new List<string> { "Frutas", "Verduras", "Lácteos" };
+
+    private void GuardarProducto()
+    {
+        if (productos.Any(p => p.Inventario == nuevoProducto.Inventario))
+        {
+            errorMessage = "El número de inventario ya existe.";
+            return;
+        }
+
+        productos.Add(new Producto
+            {
+                Inventario = nuevoProducto.Inventario,
+                Nombre = nuevoProducto.Nombre,
+                Departamento = nuevoProducto.Departamento
+            });
+
+        nuevoProducto = new Producto();
+        errorMessage = null;
+    }
+
+    private void EliminarProducto(Producto producto)
+    {
+        productos.Remove(producto);
+    }
+
+    private void CargarProductoEnFormulario(Producto producto)
+    {
+        nuevoProducto = new Producto
+            {
+                Inventario = producto.Inventario,
+                Nombre = producto.Nombre,
+                Departamento = producto.Departamento
+            };
+        modoEdicion = true;
+    }
+
+    private void ActualizarProducto()
+    {
+        var productoExistente = productos.FirstOrDefault(p => p.Inventario == nuevoProducto.Inventario);
+        if (productoExistente != null)
+        {
+            productoExistente.Nombre = nuevoProducto.Nombre;
+            productoExistente.Departamento = nuevoProducto.Departamento;
+        }
+
+        modoEdicion = false;
+        nuevoProducto = new Producto();
+    }
+
+    private void CancelarEdicion()
+    {
+        modoEdicion = false;
+        nuevoProducto = new Producto();
+    }
+}
